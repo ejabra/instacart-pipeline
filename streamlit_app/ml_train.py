@@ -136,31 +136,35 @@ def load_training_data(db):
     print(f"   Colonnes: {list(df_products.columns)}")
     
     # 3. Créer le dataset d'entraînement
-    # Stratégie: Pour chaque client, générer des paires (client, produit)
-    # avec un échantillonnage équilibré
+    # Stratégie améliorée : 
+    # - Label 1 (positif) : produits dans top 2-5 du client (pas le top 1 pour éviter le biais)
+    # - Label 0 (négatif) : mix de produits populaires + aléatoires
     
     print("\n3️⃣ Génération du dataset d'entraînement...")
     
     # Prendre un échantillon de clients (pour éviter trop de données)
-    sample_clients = df_clients.sample(min(5000, len(df_clients)), random_state=42)
+    sample_clients = df_clients.sample(min(3000, len(df_clients)), random_state=42)
     
-    # Pour chaque client, prendre ses top produits (label=1) 
-    # et des produits aléatoires (label=0)
+    # Produits les plus populaires globalement (pour échantillons négatifs réalistes)
+    popular_products = df_products.nlargest(200, 'nb_ventes')['product_name'].tolist()
     
     training_samples = []
+    positive_count = 0
+    negative_count = 0
     
     for idx, client in sample_clients.iterrows():
         user_id = client['user_id']
         
-        # Top produits du client (déjà achetés = reordered=1)
+        # Top produits du client
         top_products = client.get('top_5_produits', [])
         
         # Nettoyer la liste (peut être une string ou une liste)
         if isinstance(top_products, str):
             top_products = [p.strip() for p in top_products.split(',') if p.strip()]
         
-        # Produits positifs (achetés)
-        for product_name in top_products[:5]:  # Max 5 produits positifs
+        # ✅ Produits positifs : prendre les produits 2-5 (pas le #1 pour réduire le biais)
+        # L'idée est de prédire si un client rachètera un produit qu'il a déjà acheté (mais pas son favori absolu)
+        for product_name in top_products[1:4]:  # Produits 2 à 4 (max 3 produits positifs)
             product_row = df_products[df_products['product_name'] == product_name]
             
             if not product_row.empty:
@@ -176,19 +180,50 @@ def load_training_data(db):
                     'panier_moyen': client['panier_moyen'],
                     'taux_reachat_client': client['taux_reachat'],
                     
-                    # Features produit
+                    # Features produit (SANS taux_reachat)
                     'nb_ventes_produit': product_row.iloc[0]['nb_ventes'],
-                    'taux_reachat_produit': product_row.iloc[0]['taux_reachat'],
                     'position_moyenne_panier': product_row.iloc[0]['position_moyenne_panier'],
                     
                     # Target
-                    'reordered': 1  # Produit déjà acheté
+                    'reordered': 1  # Produit acheté par le client
                 }
                 
                 training_samples.append(sample)
+                positive_count += 1
         
-        # Produits négatifs (aléatoires, jamais achetés)
-        random_products = df_products.sample(5, random_state=42)
+        # ❌ Produits négatifs : mix de produits populaires (50%) + aléatoires (50%)
+        # Cela rend le problème plus réaliste car le modèle doit différencier entre
+        # des produits populaires que le client n'a PAS achetés
+        
+        # 2 produits populaires que le client n'a pas achetés
+        popular_not_bought = [p for p in popular_products if p not in top_products]
+        if popular_not_bought:
+            sample_popular = np.random.choice(popular_not_bought, min(2, len(popular_not_bought)), replace=False)
+            
+            for product_name in sample_popular:
+                product_row = df_products[df_products['product_name'] == product_name]
+                
+                if not product_row.empty:
+                    sample = {
+                        'user_id': user_id,
+                        'product_id': product_row.iloc[0]['product_id'],
+                        'product_name': product_name,
+                        
+                        'total_commandes': client['total_commandes'],
+                        'panier_moyen': client['panier_moyen'],
+                        'taux_reachat_client': client['taux_reachat'],
+                        
+                        'nb_ventes_produit': product_row.iloc[0]['nb_ventes'],
+                        'position_moyenne_panier': product_row.iloc[0]['position_moyenne_panier'],
+                        
+                        'reordered': 0  # Produit populaire mais PAS acheté
+                    }
+                    
+                    training_samples.append(sample)
+                    negative_count += 1
+        
+        # 2 produits aléatoires
+        random_products = df_products.sample(min(2, len(df_products)), random_state=42)
         
         for _, product in random_products.iterrows():
             product_name = product['product_name']
@@ -200,28 +235,27 @@ def load_training_data(db):
                     'product_id': product['product_id'],
                     'product_name': product_name,
                     
-                    # Features client
                     'total_commandes': client['total_commandes'],
                     'panier_moyen': client['panier_moyen'],
                     'taux_reachat_client': client['taux_reachat'],
                     
-                    # Features produit
                     'nb_ventes_produit': product['nb_ventes'],
-                    'taux_reachat_produit': product['taux_reachat'],
                     'position_moyenne_panier': product['position_moyenne_panier'],
                     
-                    # Target
-                    'reordered': 0  # Produit jamais acheté
+                    'reordered': 0  # Produit aléatoire jamais acheté
                 }
                 
                 training_samples.append(sample)
+                negative_count += 1
     
     # Convertir en DataFrame
     df_training = pd.DataFrame(training_samples)
     
     print(f"   ✅ {len(df_training)} échantillons créés")
+    print(f"   📊 Positifs: {positive_count} | Négatifs: {negative_count}")
     print(f"   Distribution de la target:")
     print(df_training['reordered'].value_counts())
+    print(f"   Ratio positif/négatif: {positive_count / max(negative_count, 1):.2f}")
     
     return df_training
 
@@ -250,16 +284,17 @@ def prepare_features(df):
     print("="*70)
     
     # Features numériques à utiliser
+    # ⚠️ IMPORTANT: Ne pas utiliser 'taux_reachat_produit' car c'est du DATA LEAKAGE
     feature_columns = [
         'total_commandes',
         'panier_moyen',
         'taux_reachat_client',
         'nb_ventes_produit',
-        'taux_reachat_produit',
         'position_moyenne_panier'
     ]
     
     print(f"\n✅ Features sélectionnées: {feature_columns}")
+    print(f"⚠️  Feature exclue: 'taux_reachat_produit' (data leakage)")
     
     # Vérifier les valeurs manquantes
     missing = df[feature_columns].isnull().sum()
@@ -270,12 +305,13 @@ def prepare_features(df):
         # Remplir avec la médiane
         df[feature_columns] = df[feature_columns].fillna(df[feature_columns].median())
     
-    # Features dérivées
+    # Features dérivées (sans utiliser taux_reachat_produit)
     df['popularity_ratio'] = df['nb_ventes_produit'] / df['nb_ventes_produit'].max()
     df['client_loyalty'] = df['taux_reachat_client'] * df['total_commandes']
-    df['product_affinity'] = df['taux_reachat_produit'] * df['popularity_ratio']
+    df['product_popularity_score'] = np.log1p(df['nb_ventes_produit']) * (1 / (df['position_moyenne_panier'] + 1))
+    df['client_engagement'] = df['total_commandes'] * df['panier_moyen']
     
-    feature_columns.extend(['popularity_ratio', 'client_loyalty', 'product_affinity'])
+    feature_columns.extend(['popularity_ratio', 'client_loyalty', 'product_popularity_score', 'client_engagement'])
     
     print(f"✅ Features dérivées ajoutées")
     print(f"   Total features: {len(feature_columns)}")
@@ -336,13 +372,16 @@ def train_model(X, y):
     # 3. Entraînement Random Forest
     print(f"\n🌲 Entraînement Random Forest...")
     
+    # Paramètres RÉDUITS pour éviter l'overfitting
     model = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=15,
-        min_samples_split=10,
-        min_samples_leaf=5,
+        n_estimators=50,           # Réduit de 100 à 50
+        max_depth=10,              # Réduit de 15 à 10
+        min_samples_split=20,      # Augmenté de 10 à 20
+        min_samples_leaf=10,       # Augmenté de 5 à 10
+        max_features='sqrt',       # Utiliser sqrt au lieu de auto
         random_state=42,
         n_jobs=-1,
+        class_weight='balanced',   # Équilibrer les classes
         verbose=1
     )
     
@@ -354,6 +393,10 @@ def train_model(X, y):
     train_time = time.time() - start_time
     
     print(f"\n✅ Entraînement terminé en {train_time:.2f}s")
+    print(f"📊 Paramètres utilisés pour éviter l'overfitting:")
+    print(f"   - Arbres: 50 (au lieu de 100)")
+    print(f"   - Profondeur max: 10 (au lieu de 15)")
+    print(f"   - Équilibrage des classes: activé")
     
     # 4. Évaluation
     print(f"\n📊 ÉVALUATION DU MODÈLE")
@@ -381,6 +424,19 @@ def train_model(X, y):
     print(f"📈 Recall         : {metrics['recall']:.4f}")
     print(f"📈 F1-Score       : {metrics['f1_score']:.4f}")
     print(f"📈 AUC-ROC        : {metrics['auc_roc']:.4f}")
+    
+    # Détection d'overfitting
+    overfitting_gap = metrics['train_accuracy'] - metrics['test_accuracy']
+    print(f"\n⚠️  Détection Overfitting:")
+    print(f"   Écart Train-Test: {overfitting_gap:.4f}")
+    
+    if overfitting_gap > 0.05:
+        print(f"   ⚠️  OVERFITTING détecté ! (écart > 5%)")
+        print(f"   💡 Réduire max_depth ou augmenter min_samples_split")
+    elif metrics['test_accuracy'] > 0.90:
+        print(f"   ⚠️  Précision trop élevée ! Vérifier le data leakage")
+    else:
+        print(f"   ✅ Modèle acceptable")
     
     # Feature importance
     print(f"\n🔍 Feature Importance (Top 5):")

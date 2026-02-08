@@ -139,22 +139,23 @@ def predict_reorder_probability(model, scaler, client_profile, product_row):
     Returns:
         float: Probabilité de réachat (0-1)
     """
-    # Construire les features
+    # Construire les features (SANS taux_reachat_produit pour éviter le data leakage)
     features = [
         client_profile['total_commandes'],
         client_profile['panier_moyen'],
         client_profile['taux_reachat'],
         product_row['nb_ventes'],
-        product_row['taux_reachat'],
+        # product_row['taux_reachat'],  # ❌ RETIRÉ - Data Leakage
         product_row['position_moyenne_panier']
     ]
     
-    # Features dérivées
+    # Features dérivées (mises à jour pour correspondre à ml_train.py)
     popularity_ratio = product_row['nb_ventes'] / 50000  # Normaliser
     client_loyalty = client_profile['taux_reachat'] * client_profile['total_commandes']
-    product_affinity = product_row['taux_reachat'] * popularity_ratio
+    product_popularity_score = np.log1p(product_row['nb_ventes']) * (1 / (product_row['position_moyenne_panier'] + 1))
+    client_engagement = client_profile['total_commandes'] * client_profile['panier_moyen']
     
-    features.extend([popularity_ratio, client_loyalty, product_affinity])
+    features.extend([popularity_ratio, client_loyalty, product_popularity_score, client_engagement])
     
     # Normaliser
     features_scaled = scaler.transform([features])
@@ -200,11 +201,11 @@ def get_recommendations(db, model, scaler, user_id, top_n=10, progress_callback=
     if progress_callback:
         progress_callback("Chargement des produits populaires...", 0.3)
     
-    df_products = get_all_products(db, limit=500, departments=preferred_departments)
+    df_products = get_all_products(db, limit=1000, departments=preferred_departments)
     
     # Si pas assez de produits avec filtres, charger sans filtre
     if len(df_products) < 100:
-        df_products = get_all_products(db, limit=500)
+        df_products = get_all_products(db, limit=1000)
     
     if df_products.empty:
         return None, "Aucun produit disponible"
@@ -396,49 +397,8 @@ def main():
             st.info("👈 Entrez un ID client et cliquez sur 'Générer Recommandations'")
     
     st.divider()
+       
     
-    # Footer
-    st.markdown("### 📚 Guide d'Utilisation")
-    
-    with st.expander("Comment ça marche ?"):
-        st.markdown("""
-        **1. Chargement du Modèle**
-        - Le modèle Random Forest est chargé depuis `models/reorder_model.pkl`
-        - Entraîné sur les données MongoDB (profils clients + stats produits)
-        
-        **2. Recherche Client**
-        - Entrez l'ID d'un client existant
-        - Le système récupère son profil depuis MongoDB
-        
-        **3. Génération Recommandations (Optimisée)**
-        - Filtrage intelligent : priorité aux départements préférés du client
-        - Seulement les 500 produits les plus populaires sont évalués
-        - Le modèle prédit la probabilité de réachat pour chaque produit
-        - Les produits sont triés par score décroissant
-        - ⚡ Temps de réponse : ~5-10 secondes (au lieu de plusieurs minutes)
-        
-        **4. Interprétation**
-        - Score > 70% : Très forte probabilité
-        - Score 50-70% : Probabilité modérée
-        - Score < 50% : Faible probabilité
-        
-        **Features utilisées:**
-        - Comportement client (nb commandes, panier moyen, fidélité)
-        - Popularité produit (ventes, taux réachat)
-        - Affinité client-produit (calculée)
-        """)
-    
-    with st.expander("Exemples d'IDs clients"):
-        st.markdown("""
-        Essayez ces IDs pour tester :
-        - **1** : Client avec 10 commandes
-        - **2** : Client avec 15 commandes
-        - **100** : Client fréquent
-        - **1000** : Client occasionnel
-        
-        *Note: Les IDs dépendent de vos données MongoDB*
-        """)
-
 # ==================== EXÉCUTION ====================
 
 if __name__ == "__main__":

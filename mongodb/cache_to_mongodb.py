@@ -242,9 +242,12 @@ def aggregate_temporal_patterns(ch_client):
     
     patterns = []
     for row in result.result_rows:
+        jour = int(row[0])
+        heure = int(row[1])
         pattern = {
-            'jour_semaine': int(row[0]),
-            'heure': int(row[1]),
+            'pattern_id': f"{jour}_{heure}",  # Clé composite unique
+            'jour_semaine': jour,
+            'heure': heure,
             'nb_commandes': int(row[2]),
             'nb_produits': int(row[3]),
             'panier_moyen': float(row[4]),
@@ -343,7 +346,7 @@ def run_caching_pipeline():
         store_in_mongodb(mongo_client, 'client_profiles', profiles, 'user_id')
         store_in_mongodb(mongo_client, 'product_stats', products, 'product_id')
         store_in_mongodb(mongo_client, 'department_performance', departments, 'department')
-        store_in_mongodb(mongo_client, 'temporal_patterns', patterns, 'jour_semaine')
+        store_in_mongodb(mongo_client, 'temporal_patterns', patterns, 'pattern_id')
         
         # Métadonnées
         db = mongo_client[MONGODB_CONFIG['database']]
