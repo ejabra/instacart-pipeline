@@ -148,7 +148,7 @@ try:
                                    'reordered','product_name','aisle','department'])
 
         # Petite pause tous les 500 messages pour stabiliser le PC
-        if message.offset % 500 == 0:
+        if message.offset % 1000 == 0:
             time.sleep(0.1) 
             print(f"✅ Traitement en cours... Offset: {message.offset}")
 

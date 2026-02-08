@@ -172,6 +172,16 @@ st.markdown("""
         font-style: italic;
         padding: 8px 0;
     }
+    
+    /* Animation LIVE */
+    @keyframes blink-live {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    .update-time span {
+        animation: blink-live 2s infinite;
+        font-weight: bold;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -349,8 +359,12 @@ def render_dashboard(filtre_dept=[], date_min=None, date_max=None):
     """Fonction qui rend tout le dashboard avec filtres appliqués"""
     
     current_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    # Indicateur LIVE toujours actif
+    auto_refresh_status = " 🔴 <span style='color: #FF4444;'>LIVE</span>"
+    
     placeholder_time.markdown(
-        f'<div class="update-time">⏱️ Dernière mise à jour : {current_time}</div>',
+        f'<div class="update-time">⏱️ Dernière mise à jour : {current_time}{auto_refresh_status}</div>',
         unsafe_allow_html=True
     )
     
@@ -465,19 +479,37 @@ def render_dashboard(filtre_dept=[], date_min=None, date_max=None):
     with col_kafka:
         st.markdown("### 🔴 Flux de Produits en Live")
         
+        # Initialiser le buffer de messages dans session state
+        if 'kafka_messages_buffer' not in st.session_state:
+            st.session_state.kafka_messages_buffer = []
+        
         # Vérifier la connexion Kafka
         if st.session_state.kafka_consumer:
             try:
-                # Récupérer les derniers messages
-                messages = get_latest_kafka_messages(st.session_state.kafka_consumer, max_messages=10)
+                # Récupérer les nouveaux messages
+                new_messages = get_latest_kafka_messages(st.session_state.kafka_consumer, max_messages=20)
+                
+                # Ajouter au buffer et garder seulement les 50 derniers
+                if new_messages and len(new_messages) > 0:
+                    st.session_state.kafka_messages_buffer.extend(new_messages)
+                    st.session_state.kafka_messages_buffer = st.session_state.kafka_messages_buffer[-50:]
+                
+                # Afficher les messages du buffer
+                messages = st.session_state.kafka_messages_buffer
                 
                 if messages and len(messages) > 0:
                     # Compteur de produits
-                    st.metric("📦 Produits vendus (dernières 10s)", len(messages), delta=f"+{len(messages)}")
+                    st.metric("✅️ Messages reçus", len(messages), delta=f"+{len(new_messages)} nouveau(x)")
                     
-                    # Afficher les messages en streaming
-                    for i, msg in enumerate(messages[:10], 1):  # Afficher seulement les 10 derniers
-                        with st.expander(f"📦 Message #{i}", expanded=(i==1)):
+                    # Bouton pour vider le buffer
+                    if st.button("🗑️ Vider Buffer", key="clear_kafka", use_container_width=True, type="secondary"):
+                        st.session_state.kafka_messages_buffer = []
+                        st.rerun()
+                    
+                    # Afficher les 10 derniers messages
+                    st.caption(f"Affichage des 10 derniers messages (sur {len(messages)} total)")
+                    for i, msg in enumerate(list(reversed(messages))[:10], 1):
+                        with st.expander(f"✅️ Message #{i}", expanded=(i==1)):
                             col1, col2 = st.columns(2)
                             with col1:
                                 st.markdown(f"**🛒 Commande:** {msg.get('order_id', 'N/A')}")
@@ -487,12 +519,15 @@ def render_dashboard(filtre_dept=[], date_min=None, date_max=None):
                                 reordered = "✅ Oui" if msg.get('reordered') == 1 else "❌ Non"
                                 st.markdown(f"**🔄 Réacheté:** {reordered}")
                                 st.markdown(f"**🕐 Heure:** {msg.get('event_time', 'N/A')}")
+                            # Debug : afficher le message brut
+                            with st.expander("🔍 Message brut (debug)"):
+                                st.json(msg)
                 else:
-                    st.info("⏳ En attente de produits...")
-                    st.caption("💡 Vérifiez que NiFi envoie des messages")
+                    st.info("⏳ Aucun message Kafka reçu")
                     
             except Exception as e:
-                st.error(f"❌ Erreur : {str(e)[:50]}...")
+                st.error(f"❌ Erreur Kafka : {str(e)}")
+                st.caption("Essayez de reconnecter le consumer")
         else:
             st.warning("⚠️ Kafka non connecté")
             if st.button("🔄 Reconnecter", key="retry_kafka_main"):
@@ -531,7 +566,10 @@ if page == "dashboard":
     with main_container:
         render_dashboard(filtre_dept, date_min, date_max)
     
-   
+    # ==================== AUTO-REFRESH POUR STREAMING ====================
+    # Auto-refresh automatique toutes les X secondes
+    time.sleep(APP_CONFIG['refresh_interval'])
+    st.rerun()
 
 elif page == "quality":
     # ==================== PAGE QUALITÉ DES DONNÉES ====================

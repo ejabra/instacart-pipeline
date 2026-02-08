@@ -1,0 +1,72 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "1. Consumer Kafka (ClickHouse)",
+            "type": "shell",
+            "command": "python",
+            "args": ["consumer.py"],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            }
+        },
+        {
+            "label": "2. Sync MongoDB (Cache Daemon)",
+            "type": "shell",
+            "command": "python",
+            "args": ["mongodb/cache_to_mongodb.py", "--daemon"],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            }
+        },
+        {
+            "label": "3. Dashboard Streamlit (BI)",
+            "type": "shell",
+            "command": "streamlit",
+            "args": ["run", "streamlit_app/app.py", "--server.port", "8501"],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            }
+        },
+        {
+            "label": "4. Training ML (Background)",
+            "type": "shell",
+            "command": "python",
+            "args": ["streamlit_app/ml_train.py", "--daemon"],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            }
+        },
+        {
+            "label": "🚀 Lancer TOUS les Services (Demo)",
+            "dependsOn": [
+                "1. Consumer Kafka (ClickHouse)",
+                "2. Sync MongoDB (Cache Daemon)",
+                "3. Dashboard Streamlit (BI)",
+                "4. Training ML (Background)"
+            ],
+            "dependsOrder": "parallel",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}

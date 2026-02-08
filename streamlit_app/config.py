@@ -19,8 +19,8 @@ KAFKA_CONFIG = {
 
 # Configuration de l'application
 APP_CONFIG = {
-    'refresh_interval': 3,  # Secondes entre chaque actualisation
     'page_title': 'InstaCart - Dashboard Temps Réel',
     'page_icon': '📊',
-    'layout': 'wide'
+    'layout': 'wide',
+    'refresh_interval': 3  # Secondes entre chaque actualisation
 }

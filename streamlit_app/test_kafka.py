@@ -10,7 +10,7 @@ import sys
 
 # Configuration
 KAFKA_BOOTSTRAP = 'localhost:9092'
-KAFKA_TOPIC = 'instacart_orders'
+KAFKA_TOPIC = 'order_products_topic'  # Topic utilisé par l'application
 
 def test_kafka_connection():
     """Tester la connexion Kafka"""

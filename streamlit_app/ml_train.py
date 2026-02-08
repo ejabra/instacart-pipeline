@@ -14,6 +14,7 @@ from pymongo import MongoClient
 import pickle
 from datetime import datetime
 import json
+import time
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -488,10 +489,20 @@ def run_ml_pipeline():
     
     return True
 
-# ==================== MAIN ====================
+
+# ==================== EXÉCUTION ====================
 
 if __name__ == "__main__":
     import sys
     
-    success = run_ml_pipeline()
-    sys.exit(0 if success else 1)
+    # Mode daemon (boucle infinie) ou one-shot
+    if len(sys.argv) > 1 and sys.argv[1] == '--daemon':
+        print("🔁 Mode DAEMON : Exécution toutes les heures")
+        while True:
+            run_ml_pipeline()
+            print(f"\n⏳ Prochaine exécution dans 24 heures...")
+            time.sleep(86400)  # 24 heures
+    else:
+        print("📌 Mode ONE-SHOT : Exécution unique")
+        success = run_ml_pipeline()
+        sys.exit(0 if success else 1)
