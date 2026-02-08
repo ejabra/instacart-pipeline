@@ -1,0 +1,25 @@
+{
+  "training_date": "2026-02-07T00:14:25.073031",
+  "feature_names": [
+    "total_commandes",
+    "panier_moyen",
+    "taux_reachat_client",
+    "nb_ventes_produit",
+    "taux_reachat_produit",
+    "position_moyenne_panier",
+    "popularity_ratio",
+    "client_loyalty",
+    "product_affinity"
+  ],
+  "metrics": {
+    "train_accuracy": 0.999298302431652,
+    "test_accuracy": 0.9992443868739206,
+    "precision": 1.0,
+    "recall": 0.998358348968105,
+    "f1_score": 0.9991785001760357,
+    "auc_roc": 0.9998459193245778,
+    "train_time": 0.46351170539855957
+  },
+  "model_type": "RandomForestClassifier",
+  "n_features": 9
+}

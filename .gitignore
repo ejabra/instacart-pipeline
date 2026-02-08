@@ -1,0 +1,21 @@
+# Ignorer tous les fichiers CSV
+*.csv
+
+# Ignorer le dossier de données spécifique
+data/
+data/statics/
+data_in/
+data/streaming/
+data/driver/
+
+
+# Ignorer les fichiers de logs NiFi et Python
+*.log
+logs/
+
+# Ignorer les dossiers virtuels Python
+venv/
+__pycache__/
+
+# Ignorer les fichiers de configuration sensibles
+.env
