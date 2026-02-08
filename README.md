@@ -1,102 +1,46 @@
 # 🛒 Instacart Real-Time Supply Chain Pipeline
 
-![Status](https://img.shields.io/badge/Status-Completed-success)
-![Python](https://img.shields.io/badge/Python-3.9-blue)
-![Docker](https://img.shields.io/badge/Docker-Compose-orange)
-![ClickHouse](https://img.shields.io/badge/Database-ClickHouse-yellow)
-![Kafka](https://img.shields.io/badge/Streaming-Kafka-black)
+![Status](https://img.shields.io/badge/Status-Completed-success?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.9-blue?style=flat-square&logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-orange?style=flat-square&logo=docker&logoColor=white)
+![ClickHouse](https://img.shields.io/badge/Database-ClickHouse-yellow?style=flat-square&logo=clickhouse&logoColor=black)
+![Kafka](https://img.shields.io/badge/Streaming-Kafka-black?style=flat-square&logo=apachekafka&logoColor=white)
 
 Un pipeline Big Data de bout en bout pour prédire la demande et optimiser les stocks en temps réel, basé sur le dataset public **Instacart**.
 
 ---
 
 ## 🚀 Objectif du Projet
-Réduire le gaspillage alimentaire et éviter les ruptures de stock grâce à une architecture Data Streaming et au Machine Learning.
+**Réduire le gaspillage alimentaire et éviter les ruptures de stock grâce à une architecture Data Streaming et au Machine Learning.**
 
-* **Problème :** Gestion statique des stocks inefficace face à la volatilité de la demande.
-* **Solution :** Ingestion temps réel et prédiction du prochain achat utilisateur.
-* **Performance ML :** Modèle Random Forest avec un **R² de 0.79**.
+* 🔴 **Problème :** Gestion statique des stocks inefficace face à la volatilité de la demande.
+* 🟢 **Solution :** Ingestion temps réel et prédiction du prochain achat utilisateur.
+* 📈 **Performance ML :** Modèle Random Forest avec un **R² de 0.79**.
 
 ---
 
 ## 🏗️ Architecture Technique
 
-Le projet suit un flux ETL/ELT moderne entièrement conteneurisé :
+![Architecture Globale](architecture.png)
+*(Schéma du pipeline de données : De l'ingestion NiFi à la visualisation Streamlit)*
 
-```mermaid
-graph LR
-A[Ingestion: Apache NiFi] -->|JSON Stream| B(Broker: Kafka)
-B -->|Consumer Python| C{Processing & Enrichment}
-C -->|Storage| D[(ClickHouse OLAP)]
-C -->|Metadata| E[(MySQL)]
-D -->|Visualization| F[Streamlit Dashboard]
-D -->|BI| G[Power BI]
-🛠️ Tech Stack
-Ingestion : Apache NiFi (Gestion de flux, Idempotence, Backpressure)
+### 🛠️ Tech Stack
 
-Streaming : Apache Kafka & Zookeeper (Message Broker haute performance)
+| Composant | Technologies | Rôle & Caractéristiques |
+| :--- | :--- | :--- |
+| **Ingestion** | ![NiFi](https://img.shields.io/badge/Apache_NiFi-728e9b?style=flat-square&logo=apache-nifi&logoColor=white) | Gestion de flux, Idempotence, Backpressure |
+| **Streaming** | ![Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=flat-square&logo=apache-kafka&logoColor=white) | Message Broker haute performance & Zookeeper |
+| **Stockage** | ![ClickHouse](https://img.shields.io/badge/ClickHouse-F5475B?style=flat-square&logo=clickhouse&logoColor=white) ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white) | Analytics OLAP (ClickHouse) & Métadonnées (MySQL) |
+| **Processing** | ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) | Pandas, Kafka-Python, OpenLineage |
+| **ML & AI** | ![Scikit-Learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white) | Random Forest (Prédiction de demande) |
+| **Visu** | ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white) ![PowerBI](https://img.shields.io/badge/Power_BI-F2C811?style=flat-square&logo=powerbi&logoColor=black) | Apps Data Temps Réel & Analyse historique |
+| **Ops** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) | Conteneurisation complète |
 
-Stockage : * ClickHouse (Big Data Analytics - OLAP)
+---
 
-MySQL (Lookup & Métadonnées relationnelles)
+## 📦 Installation & Démarrage
 
-Processing : Python (Pandas, Kafka-Python, OpenLineage)
-
-Machine Learning : Scikit-learn (Random Forest pour la prédiction de demande)
-
-Visualisation : Streamlit (Apps Data Temps Réel) & Power BI (Analyse historique)
-
-Infrastructure : Docker & Docker Compose
-
-📦 Installation & Démarrage
-Pré-requis
-Docker & Docker Compose
-
-Python 3.9+
-
-Git
-
-1. Cloner le projet
-Bash
-
-git clone [https://github.com/votre-username/instacart-pipeline.git](https://github.com/votre-username/instacart-pipeline.git)
-cd instacart-pipeline
-2. Lancer l'infrastructure (Docker)
-Assurez-vous que les ports 8080 (NiFi), 9092 (Kafka), 8123 (ClickHouse) et 3000 (Marquez) sont libres.
-
-Bash
-
-docker-compose up -d
-Vérifiez que les conteneurs sont bien lancés via docker ps.
-
-3. Installer les dépendances Python
-Il est recommandé d'utiliser un environnement virtuel.
-
-Bash
-
-pip install -r requirements.txt
-4. Lancer le Pipeline
-Démarrer le Consumer (Enrichissement & Stockage) :
-
-Bash
-
-python consumer.py
-Lancer le Dashboard ML (Streamlit) :
-
-Bash
-
-streamlit run app.py
-📊 Fonctionnalités Clés
-✅ Ingestion Résiliente : Gestion des doublons (Deduplication) et transformation à la volée via NiFi.
-
-✅ Analytics Temps Réel : Calcul instantané des indicateurs clés (KPIs) via ClickHouse.
-
-✅ Data Lineage : Traçabilité des flux de données (Compatible OpenLineage/Marquez).
-
-✅ Prédiction de Stock : Estimation des volumes de commandes par produit et par jour pour la Supply Chain.
-
-👥 Auteurs
-Brahim DARGUI - Data Engineer & Architecture
-Nouhaila BENNANI - Data Analyst & Machine Learning
-
-Projet de fin de formation - Ynov Campus (2025)
+### Pré-requis
+* Docker & Docker Compose
+* Python 3.9+
+* Git
