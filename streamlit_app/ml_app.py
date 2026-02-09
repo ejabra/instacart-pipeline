@@ -271,7 +271,7 @@ def main():
     """
     
     # Header
-    st.title("🤖 Système de Recommandation ML")
+    st.title("Système de Recommandation ML")
     st.markdown("**Prédiction de Réachat basée sur Random Forest**")
     
     st.divider()
@@ -292,7 +292,7 @@ def main():
     
     # Sidebar - Informations du modèle
     with st.sidebar:
-        st.markdown("### 📊 Informations Modèle")
+        st.markdown("### • Informations Modèle")
         
         if metadata:
             st.metric("Accuracy", f"{metadata['metrics']['test_accuracy']:.2%}")
@@ -311,7 +311,7 @@ def main():
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.markdown("### 🔍 Recherche Client")
+        st.markdown("### Recherche Client")
         
         # Input User ID
         user_id_input = st.text_input(
@@ -320,10 +320,10 @@ def main():
             help="Entrez l'ID d'un client existant"
         )
         
-        search_button = st.button("🚀 Générer Recommandations", type="primary", use_container_width=True)
+        search_button = st.button("Générer Recommandations", type="primary", use_container_width=True)
     
     with col2:
-        st.markdown("### 📦 Recommandations")
+        st.markdown("Recommandations")
         
         if search_button and user_id_input:
             try:
@@ -365,7 +365,7 @@ def main():
                     st.divider()
                     
                     # Afficher les recommandations
-                    st.markdown(f"### 🎯 Top {len(df_recommendations)} Produits Recommandés")
+                    st.markdown(f"### Top {len(df_recommendations)} Produits Recommandés")
                     
                     for idx, row in df_recommendations.iterrows():
                         with st.expander(
@@ -394,7 +394,7 @@ def main():
         elif search_button:
             st.warning("⚠️ Veuillez entrer un ID client")
         else:
-            st.info("👈 Entrez un ID client et cliquez sur 'Générer Recommandations'")
+            st.info("Entrez un ID client et cliquez sur 'Générer Recommandations'")
     
     st.divider()
        
