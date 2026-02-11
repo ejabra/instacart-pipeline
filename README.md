@@ -43,6 +43,14 @@
 
 ---
 
+## 📊 DASHBOARD POWER BI
+
+![DASHBOARD POWER BI](powerbi_1.png)
+
+![DASHBOARD POWER BI](powerbi_2.png)
+
+---
+
 ## 📦 Installation & Démarrage
 
 Suivez ces étapes pour lancer le projet en local.
@@ -64,8 +72,9 @@ docker-compose up -d
 ```
 ⚠️ Note : Assurez-vous que les ports 8080, 9092, 8123 et 3000 sont libres sur votre machine.
 
+---
 
-### ▶️ Utilisation
+## ▶️ Utilisation
 Étape 1 : Démarrer le Consumer (Enrichissement & Stockage)
 Ce script écoute Kafka, enrichit les données via MySQL et les insère dans ClickHouse.
 ```bash
@@ -77,7 +86,7 @@ Visualisez les flux de données en temps réel et les prédictions.
 streamlit run app.py
 ```
 
-### 📊 Fonctionnalités Clés
+## 📊 Fonctionnalités Clés
 ✅ Ingestion Résiliente : Gestion des doublons (Deduplication) et transformation à la volée via Apache NiFi.
 
 ✅ Analytics Temps Réel : Calcul instantané des KPIs (Panier moyen, Top produits) grâce à la puissance de ClickHouse.
@@ -86,7 +95,7 @@ streamlit run app.py
 
 ✅ Prédiction de Stock : Algorithme de Machine Learning pour estimer les volumes de commandes futurs.
 
-### 👥 Auteurs
+## 👥 Auteurs
 Ce projet a été réalisé dans le cadre du PFE JobInTech (Ynov Campus) par :
 
 Brahim DARGUI - Data Engineering & Architecture
