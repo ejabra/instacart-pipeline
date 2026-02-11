@@ -1,12 +1,17 @@
 # 🛒 Instacart Real-Time Supply Chain Pipeline
 
+<div align="center">
+
 ![Status](https://img.shields.io/badge/Status-Completed-success?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.9-blue?style=flat-square&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-orange?style=flat-square&logo=docker&logoColor=white)
 ![ClickHouse](https://img.shields.io/badge/Database-ClickHouse-yellow?style=flat-square&logo=clickhouse&logoColor=black)
 ![Kafka](https://img.shields.io/badge/Streaming-Kafka-black?style=flat-square&logo=apachekafka&logoColor=white)
 
-Un pipeline Big Data de bout en bout pour prédire la demande et optimiser les stocks en temps réel, basé sur le dataset public **Instacart**.
+**Un pipeline Big Data de bout en bout pour prédire la demande et optimiser les stocks en temps réel.**
+*Basé sur le dataset public Instacart.*
+
+</div>
 
 ---
 
@@ -40,7 +45,52 @@ Un pipeline Big Data de bout en bout pour prédire la demande et optimiser les s
 
 ## 📦 Installation & Démarrage
 
-### Pré-requis
-* Docker & Docker Compose
-* Python 3.9+
-* Git
+Suivez ces étapes pour lancer le projet en local.
+
+### 1. Pré-requis
+* **Docker** & **Docker Compose** installés.
+* **Python 3.9+** installé.
+* **Git** installé.
+
+### 2. Clonage du projet
+```bash
+git clone https://github.com/ejabra/Instacart-Pipeline.git
+cd instacart-pipeline
+```
+### 3. Lancement de l'infrastructure (Docker)
+Démarrez les conteneurs (Kafka, NiFi, ClickHouse, Zookeeper, Marquez).
+```bash
+docker-compose up -d
+```
+⚠️ Note : Assurez-vous que les ports 8080, 9092, 8123 et 3000 sont libres sur votre machine.
+
+
+### ▶️ Utilisation
+Étape 1 : Démarrer le Consumer (Enrichissement & Stockage)
+Ce script écoute Kafka, enrichit les données via MySQL et les insère dans ClickHouse.
+```bash
+python consumer.py
+```
+### Étape 2 : Lancer le Dashboard de Monitoring
+Visualisez les flux de données en temps réel et les prédictions.
+```bash
+streamlit run app.py
+```
+
+### 📊 Fonctionnalités Clés
+✅ Ingestion Résiliente : Gestion des doublons (Deduplication) et transformation à la volée via Apache NiFi.
+
+✅ Analytics Temps Réel : Calcul instantané des KPIs (Panier moyen, Top produits) grâce à la puissance de ClickHouse.
+
+✅ Data Lineage : Traçabilité complète des données (Provenance) compatible avec OpenLineage/Marquez.
+
+✅ Prédiction de Stock : Algorithme de Machine Learning pour estimer les volumes de commandes futurs.
+
+### 👥 Auteurs
+Ce projet a été réalisé dans le cadre du PFE JobInTech (Ynov Campus) par :
+
+Brahim DARGUI - Data Engineering & Architecture
+
+Nouhaila BENNANI - Data Analysis & Machine Learning
+
+2025 - Projet Open Source à but éducatif.
