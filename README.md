@@ -58,7 +58,7 @@ A fully containerized **streaming data pipeline** that ingests Instacart order e
 | Orchestration | Docker Compose | Full stack containerization (6 services) |
 | Governance | Marquez / OpenLineage | Data lineage tracking |
 
-![Architecture](architecture.png)
+![Architecture](/docs/screenshots/architecture.png)
 
 ---
 
@@ -93,14 +93,14 @@ A fully containerized **streaming data pipeline** that ingests Instacart order e
 ### Streamlit — Real-Time Monitoring
 > Live pipeline metrics: throughput, consumer lag, top products, demand curve
 
-![STREAMLIT DASHBOARD](streamlit.png)
+![STREAMLIT DASHBOARD](/docs/screenshots/streamlit.png)
 
 ### Power BI — Business Intelligence
 > Stock KPIs, demand heatmaps, category performance, prediction vs actual
 
-![POWER BI DASHBOARD](powerbi_1.png)
+![POWER BI DASHBOARD](/docs/screenshots/powerbi_1.png)
 
-![POWER BI DASHBOARD](powerbi_2.png)
+![POWER BI DASHBOARD](/docs/screenshots/powerbi_2.png)
 
 *(Screenshots in `/docs/screenshots/` — see dashboard previews in the images above)*
 
